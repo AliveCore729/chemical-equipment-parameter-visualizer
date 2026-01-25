@@ -1,4 +1,3 @@
-```markdown
 # Chemical Equipment Parameter Visualizer ⚗️
 ### Hybrid Web + Desktop Application
 
@@ -115,7 +114,6 @@ ChemicalProject/
 │
 ├── venv/                     # Virtual Environment
 └── README.md                 # Project Documentation
-
 ```
 
 ---
@@ -123,42 +121,33 @@ ChemicalProject/
 ## 🚀 How to Run the Project
 
 ### 1️⃣ Backend (Django)
-
 The backend must be running for the Web and Desktop apps to work.
 
 ```bash
 cd backend
 source ../venv/bin/activate  # Or 'venv\Scripts\activate' on Windows
 python manage.py runserver
-
 ```
-
 *The backend will run at:* `http://127.0.0.1:8000/`
 
 ### 2️⃣ Web Frontend (React)
-
 Open a new terminal:
 
 ```bash
 cd web
 npm install
 npm start
-
 ```
-
 *The web app will run at:* `http://localhost:3000/`
 
 ### 3️⃣ Desktop Application (PyQt5)
-
 Open a new terminal:
 
 ```bash
 cd desktop
 # Ensure requirements are installed (pip install PyQt5 matplotlib requests)
 python app.py
-
 ```
-
 *A desktop window will open for CSV upload and visualization.*
 
 ---
@@ -168,7 +157,7 @@ python app.py
 Use the provided `sample_equipment_data.csv` file for testing. The system expects the following columns:
 
 | Equipment Name | Type | Flowrate | Pressure | Temperature |
-| --- | --- | --- | --- | --- |
+| :--- | :--- | :--- | :--- | :--- |
 | Tank-01 | Reactor | 500 | 12.5 | 85 |
 
 ---
@@ -192,5 +181,3 @@ Focus: Data Structures, Backend Systems, Full-Stack Development.
 ## 🏁 Conclusion
 
 This project demonstrates a complete **end-to-end hybrid system** using industry-relevant technologies. It follows clean architecture principles and is suitable for real-world data visualization and reporting use cases.
-
-```
