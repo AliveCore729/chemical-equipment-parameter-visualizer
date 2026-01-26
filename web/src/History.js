@@ -4,14 +4,26 @@ import axios from "axios";
 function History() {
   const [history, setHistory] = useState([]);
 
-  // --- LOGIC: UNCHANGED ---
+  // --- SECURITY CONFIGURATION ---
+  // Load values from .env file
+  const API_URL = process.env.REACT_APP_API_URL || "http://127.0.0.1:8000";
+  const TOKEN = process.env.REACT_APP_API_TOKEN;
+
   useEffect(() => {
     const fetchHistory = async () => {
+      // Safety Check: Don't call API if token is missing
+      if (!TOKEN) {
+        console.warn("API Token is missing. Please check your .env file.");
+        return;
+      }
+
       try {
         const res = await axios.get(
-          "http://127.0.0.1:8000/api/history/",
+          `${API_URL}/api/history/`, // Use the variable
           {
-            headers: { Authorization: "Token 198094be83d8b909f71a8526901e5f8c4e2d46c7" },
+            headers: { 
+              Authorization: `Token ${TOKEN}` // Use the variable
+            },
           }
         );
         setHistory(res.data);
@@ -21,14 +33,21 @@ function History() {
     };
 
     fetchHistory();
-  }, []);
+  }, [API_URL, TOKEN]);
 
   const downloadPDF = async (datasetId, filename) => {
+    if (!TOKEN) {
+      alert("Authentication Error: Token missing.");
+      return;
+    }
+
     try {
       const res = await axios.get(
-        `http://127.0.0.1:8000/api/report/${datasetId}/`,
+        `${API_URL}/api/report/${datasetId}/`, // Use the variable
         {
-          headers: { Authorization: "Token 198094be83d8b909f71a8526901e5f8c4e2d46c7" },
+          headers: { 
+            Authorization: `Token ${TOKEN}` // Use the variable
+          },
           responseType: "blob",
         }
       );
@@ -45,7 +64,6 @@ function History() {
       alert("Failed to download PDF");
     }
   };
-  // ------------------------
 
   return (
     <div className="glass-panel" style={{ minHeight: '100%' }}>
@@ -69,7 +87,7 @@ function History() {
             </span>
           </div>
 
-          {/* New Detailed Metrics Layout */}
+          {/* Detailed Metrics Layout */}
           <div style={{ marginBottom: '15px' }}>
             
             {/* Equipment Count Row */}

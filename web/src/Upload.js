@@ -25,13 +25,10 @@ function Upload() {
     
     if (e.dataTransfer.files && e.dataTransfer.files[0]) {
       const droppedFile = e.dataTransfer.files[0];
-      
-      // VALIDATION: Check if file ends with .csv
       if (!droppedFile.name.toLowerCase().endsWith('.csv')) {
         alert("Incorrect file format. Please upload a .csv file.");
         return;
       }
-      
       setFile(droppedFile);
     }
   };
@@ -50,21 +47,29 @@ function Upload() {
     const formData = new FormData();
     formData.append("file", file);
 
+    // SECURE: Use Environment Variable
+    const API_URL = process.env.REACT_APP_API_URL || "http://127.0.0.1:8000";
+    const TOKEN = process.env.REACT_APP_API_TOKEN;
+
+    if (!TOKEN) {
+      alert("System Error: API Token is missing. Please check .env file.");
+      return;
+    }
+
     try {
       const res = await axios.post(
-        "http://127.0.0.1:8000/api/upload/",
+        `${API_URL}/api/upload/`,
         formData,
         {
           headers: {
-            Authorization: "Token 198094be83d8b909f71a8526901e5f8c4e2d46c7",
+            Authorization: `Token ${TOKEN}`, // Use the variable
           },
         }
       );
       setResult(res.data);
     } catch (error) {
       console.error("Upload failed", error);
-      // Show server error message if available, otherwise generic
-      const errMsg = error.response?.data?.error || "Error uploading file. Ensure it is a valid CSV.";
+      const errMsg = error.response?.data?.error || "Error uploading file.";
       alert(errMsg);
     }
   };
@@ -75,7 +80,6 @@ function Upload() {
       <div className="glass-panel">
         <h2 className="section-title">New Analysis</h2>
         
-        {/* Drag & Drop Zone */}
         <form
           onDragEnter={handleDrag}
           onSubmit={(e) => e.preventDefault()}
@@ -105,7 +109,6 @@ function Upload() {
             </p>
           </label>
 
-          {/* Selected File Feedback */}
           {file && (
             <div style={{textAlign:'center'}}>
               <div className="file-name-display">
@@ -114,7 +117,6 @@ function Upload() {
             </div>
           )}
 
-          {/* Action Button */}
           <div style={{ textAlign: 'center' }}>
             <button 
               onClick={uploadCSV} 
@@ -128,7 +130,6 @@ function Upload() {
         </form>
       </div>
 
-      {/* Results Section (Stats & Charts) */}
       {result && (
         <div className="glass-panel">
           <h2 className="section-title">Overview</h2>
