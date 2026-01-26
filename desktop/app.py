@@ -1,11 +1,13 @@
 import sys
 import requests
 import os
-from dotenv import load_dotenv  # IMPORT THIS
+from dotenv import load_dotenv
+from functools import partial
 
 from PyQt5.QtWidgets import (
     QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
-    QPushButton, QLabel, QFileDialog, QFrame, QGridLayout, QGroupBox, QMessageBox
+    QPushButton, QLabel, QFileDialog, QFrame, QGridLayout, QGroupBox, 
+    QMessageBox, QScrollArea, QSizePolicy
 )
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QFont
@@ -16,13 +18,16 @@ from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
 import matplotlib.pyplot as plt
 
-# --- 1. LOAD ENVIRONMENT VARIABLES ---
-load_dotenv()  # This loads the .env file
+# --- 1. LOAD CONFIGURATION ---
+load_dotenv()
 
-API_UPLOAD_URL = os.getenv("API_URL", "http://127.0.0.1:8000/api/upload/")
+API_URL_BASE = os.getenv("API_URL", "http://127.0.0.1:8000")
+API_UPLOAD = f"{API_URL_BASE}/api/upload/"
+API_HISTORY = f"{API_URL_BASE}/api/history/"
+API_REPORT = f"{API_URL_BASE}/api/report/"
 API_TOKEN = os.getenv("API_TOKEN")
 
-# --- STYLESHEET (Keep existing stylesheet) ---
+# --- 2. STYLESHEET ---
 STYLESHEET = """
 QMainWindow {
     background-color: #0f172a;
@@ -31,115 +36,247 @@ QLabel {
     color: #ffffff;
     font-family: 'Segoe UI', sans-serif;
 }
+/* Panels & GroupBoxes */
 QGroupBox {
     border: 1px solid #334155;
-    border-radius: 8px;
+    border-radius: 12px;
     margin-top: 10px;
     background-color: #1e293b;
-    color: #94a3b8;
     font-weight: bold;
+    color: #94a3b8;
 }
 QGroupBox::title {
     subcontrol-origin: margin;
     left: 10px;
     padding: 0 5px;
 }
+QScrollArea {
+    border: none;
+    background-color: transparent;
+}
+/* Buttons */
 QPushButton {
-    background-color: #f59e0b;
+    background-color: #f59e0b; /* Orange Main Button */
     color: white;
     border: none;
-    padding: 10px 20px;
+    padding: 10px;
     border-radius: 6px;
     font-weight: bold;
-    font-size: 14px;
 }
 QPushButton:hover {
     background-color: #d97706;
 }
-QPushButton:pressed {
-    background-color: #b45309;
+QPushButton#DownloadBtn {
+    background-color: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: #cbd5e1;
+    font-size: 11px;
+    padding: 6px;
+    margin-top: 5px;
 }
-QLabel#StatValue {
-    font-size: 24px;
-    font-weight: bold;
-    color: #38bdf8;
+QPushButton#DownloadBtn:hover {
+    background-color: rgba(255, 255, 255, 0.2);
+    color: white;
 }
-QLabel#StatLabel {
-    color: #94a3b8;
-    font-size: 12px;
-    text-transform: uppercase;
+/* History Items */
+QFrame#HistoryCard {
+    background-color: rgba(0, 0, 0, 0.2);
+    border-radius: 8px;
+    border-left: 3px solid rgba(255, 255, 255, 0.1);
 }
+QFrame#HistoryCard:hover {
+    background-color: rgba(255, 255, 255, 0.05);
+    border-left: 3px solid #f59e0b;
+}
+/* Stats Text */
+QLabel#StatValue { font-size: 20px; font-weight: bold; color: #38bdf8; }
+QLabel#StatLabel { color: #94a3b8; font-size: 11px; text-transform: uppercase; }
+QLabel#HistTitle { font-weight: bold; font-size: 13px; color: #e2e8f0; }
+QLabel#HistMeta { font-size: 11px; color: #64748b; }
 """
 
 class EquipmentApp(QMainWindow):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("Chemical Equipment Visualizer")
-        self.setGeometry(100, 100, 1100, 700)
+        self.setGeometry(100, 100, 1200, 800)
         self.setStyleSheet(STYLESHEET)
         
-        # Check if Token exists
         if not API_TOKEN:
-            QMessageBox.critical(self, "Configuration Error", 
-                                 "API_TOKEN not found.\nPlease create a .env file with your token.")
+            QMessageBox.critical(self, "Config Error", "API_TOKEN missing in .env file")
 
         self.initUI()
+        self.refresh_history() # Load history on startup
 
     def initUI(self):
-        # ... (Keep the rest of your UI code EXACTLY the same) ...
-        # Copy the initUI, create_stat_card, display_results methods from the previous answer
-        # The logic below is just for the upload_csv method which uses the token
-        
-        # Main Container
+        # Main Container (Horizontal Split)
         central_widget = QWidget()
         self.setCentralWidget(central_widget)
-        main_layout = QVBoxLayout(central_widget)
+        main_layout = QHBoxLayout(central_widget)
         main_layout.setSpacing(20)
-        main_layout.setContentsMargins(30, 30, 30, 30)
+        main_layout.setContentsMargins(20, 20, 20, 20)
+
+        # ================= LEFT PANEL (DASHBOARD) =================
+        left_panel = QWidget()
+        left_layout = QVBoxLayout(left_panel)
+        left_layout.setContentsMargins(0, 0, 0, 0)
+        left_layout.setSpacing(15)
 
         # 1. Header
         header = QLabel("Parameter Dashboard")
-        header.setFont(QFont("Segoe UI", 24, QFont.Bold))
-        main_layout.addWidget(header)
+        header.setFont(QFont("Segoe UI", 22, QFont.Bold))
+        left_layout.addWidget(header)
 
         # 2. Upload Section
-        upload_group = QGroupBox("Data Input")
+        upload_group = QGroupBox("New Analysis")
         upload_layout = QHBoxLayout()
         
         self.file_label = QLabel("No file selected")
         self.file_label.setStyleSheet("color: #64748b; font-style: italic;")
         
-        self.upload_btn = QPushButton("Upload CSV & Analyze")
+        self.upload_btn = QPushButton("Upload CSV")
         self.upload_btn.setCursor(Qt.PointingHandCursor)
+        self.upload_btn.setFixedWidth(120)
         self.upload_btn.clicked.connect(self.upload_csv)
 
         upload_layout.addWidget(self.upload_btn)
         upload_layout.addWidget(self.file_label)
-        upload_layout.addStretch()
         
         upload_group.setLayout(upload_layout)
-        main_layout.addWidget(upload_group)
+        left_layout.addWidget(upload_group)
 
-        # 3. Stats Grid
+        # 3. Stats Grid (Hidden initially)
         self.stats_group = QGroupBox("Overview")
         self.stats_layout = QGridLayout()
         self.stats_group.setLayout(self.stats_layout)
         self.stats_group.setVisible(False) 
-        main_layout.addWidget(self.stats_group)
+        left_layout.addWidget(self.stats_group)
 
         # 4. Charts Area
         self.chart_group = QGroupBox("Visualization")
         chart_layout = QVBoxLayout()
-        
         self.figure = Figure(figsize=(5, 4), dpi=100)
         self.figure.patch.set_facecolor('#1e293b')
         self.canvas = FigureCanvas(self.figure)
-        
         chart_layout.addWidget(self.canvas)
         self.chart_group.setLayout(chart_layout)
         self.chart_group.setVisible(False)
-        main_layout.addWidget(self.chart_group, stretch=1)
+        left_layout.addWidget(self.chart_group, stretch=1)
 
+        # ================= RIGHT PANEL (HISTORY) =================
+        right_panel = QWidget()
+        right_panel.setFixedWidth(320) # Sidebar width
+        right_layout = QVBoxLayout(right_panel)
+        right_layout.setContentsMargins(0, 0, 0, 0)
+
+        # History Header
+        hist_label = QLabel("Recent Activity")
+        hist_label.setFont(QFont("Segoe UI", 14, QFont.Bold))
+        hist_label.setStyleSheet("color: #94a3b8; margin-bottom: 5px;")
+        right_layout.addWidget(hist_label)
+
+        # Scroll Area for History Items
+        self.hist_scroll = QScrollArea()
+        self.hist_scroll.setWidgetResizable(True)
+        self.hist_container = QWidget()
+        self.hist_container.setStyleSheet("background-color: transparent;")
+        self.hist_layout = QVBoxLayout(self.hist_container)
+        self.hist_layout.setAlignment(Qt.AlignTop)
+        self.hist_layout.setSpacing(10)
+        
+        self.hist_scroll.setWidget(self.hist_container)
+        right_layout.addWidget(self.hist_scroll)
+
+        # Add panels to main window
+        main_layout.addWidget(left_panel, stretch=3)
+        main_layout.addWidget(right_panel, stretch=1)
+
+    # --- LOGIC: FETCH & DISPLAY HISTORY ---
+    def refresh_history(self):
+        if not API_TOKEN: return
+
+        # Clear existing items
+        for i in reversed(range(self.hist_layout.count())): 
+            self.hist_layout.itemAt(i).widget().setParent(None)
+
+        try:
+            response = requests.get(
+                API_HISTORY,
+                headers={"Authorization": f"Token {API_TOKEN}"}
+            )
+            if response.status_code == 200:
+                history_data = response.json()
+                if not history_data:
+                    self.hist_layout.addWidget(QLabel("No history found."))
+                else:
+                    for item in history_data:
+                        self.add_history_card(item)
+            else:
+                print("Failed to fetch history:", response.text)
+        except Exception as e:
+            print("History connection error:", e)
+
+    def add_history_card(self, item):
+        """Creates a card widget for a single history item"""
+        card = QFrame()
+        card.setObjectName("HistoryCard")
+        card_layout = QVBoxLayout(card)
+        card_layout.setSpacing(4)
+        
+        # Filename
+        lbl_name = QLabel(item['filename'])
+        lbl_name.setObjectName("HistTitle")
+        lbl_name.setWordWrap(True)
+        
+        # Date
+        lbl_date = QLabel(item['uploaded_at'].split("T")[0])
+        lbl_date.setObjectName("HistMeta")
+        
+        # Metrics Row
+        metrics = QLabel(f"Flow: {item['avg_flowrate']:.1f} | Press: {item['avg_pressure']:.1f}")
+        metrics.setStyleSheet("color: #64748b; font-size: 11px;")
+        
+        # Download Button
+        btn_download = QPushButton("Download Report PDF")
+        btn_download.setObjectName("DownloadBtn")
+        btn_download.setCursor(Qt.PointingHandCursor)
+        # Use partial to pass the specific ID and Filename to the function
+        btn_download.clicked.connect(partial(self.download_report, item['id'], item['filename']))
+
+        card_layout.addWidget(lbl_name)
+        card_layout.addWidget(lbl_date)
+        card_layout.addWidget(metrics)
+        card_layout.addWidget(btn_download)
+        
+        self.hist_layout.addWidget(card)
+
+    def download_report(self, report_id, filename):
+        """Downloads the PDF report"""
+        save_path, _ = QFileDialog.getSaveFileName(
+            self, "Save Report", f"{filename}_report.pdf", "PDF Files (*.pdf)"
+        )
+        
+        if not save_path: return
+
+        try:
+            response = requests.get(
+                f"{API_REPORT}{report_id}/",
+                headers={"Authorization": f"Token {API_TOKEN}"},
+                stream=True
+            )
+            
+            if response.status_code == 200:
+                with open(save_path, 'wb') as f:
+                    for chunk in response.iter_content(chunk_size=8192):
+                        f.write(chunk)
+                QMessageBox.information(self, "Success", "Report downloaded successfully!")
+            else:
+                QMessageBox.warning(self, "Error", "Failed to download report.")
+                
+        except Exception as e:
+            QMessageBox.critical(self, "Error", f"Download failed: {str(e)}")
+
+    # --- LOGIC: UPLOAD & DISPLAY ---
     def create_stat_card(self, title, value, row, col):
         container = QFrame()
         layout = QVBoxLayout()
@@ -156,35 +293,27 @@ class EquipmentApp(QMainWindow):
         self.stats_layout.addWidget(container, row, col)
 
     def upload_csv(self):
-        # Safety Check
-        if not API_TOKEN:
-            QMessageBox.critical(self, "Error", "Cannot upload: API Token is missing.")
-            return
+        if not API_TOKEN: return
 
-        file_path, _ = QFileDialog.getOpenFileName(
-            self, "Select CSV File", "", "CSV Files (*.csv)"
-        )
-
-        if not file_path:
-            return
+        file_path, _ = QFileDialog.getOpenFileName(self, "Select CSV", "", "CSV Files (*.csv)")
+        if not file_path: return
 
         self.file_label.setText(os.path.basename(file_path))
 
         try:
             with open(file_path, "rb") as f:
                 response = requests.post(
-                    API_UPLOAD_URL,
-                    # SECURELY USE THE VARIABLE LOADED FROM .ENV
+                    API_UPLOAD,
                     headers={"Authorization": f"Token {API_TOKEN}"},
                     files={"file": f}
                 )
 
-            if response.status_code != 200:
+            if response.status_code == 200:
+                data = response.json()
+                self.display_results(data)
+                self.refresh_history() # Refresh sidebar after upload
+            else:
                 QMessageBox.critical(self, "Error", f"Upload failed: {response.text}")
-                return
-
-            data = response.json()
-            self.display_results(data)
 
         except Exception as e:
             QMessageBox.critical(self, "Connection Error", str(e))
@@ -198,7 +327,6 @@ class EquipmentApp(QMainWindow):
         self.create_stat_card("Avg Flowrate", f"{data['avg_flowrate']:.2f}", 0, 1)
         self.create_stat_card("Avg Pressure", f"{data['avg_pressure']:.2f}", 0, 2)
         self.create_stat_card("Avg Temperature", f"{data['avg_temperature']:.2f}", 0, 3)
-        
         self.stats_group.setVisible(True)
 
         # Update Charts
