@@ -1,36 +1,29 @@
 import pandas as pd
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated
-
-from .models import Dataset
 from django.http import FileResponse
 from reportlab.lib.pagesizes import A4
 from reportlab.pdfgen import canvas
 import io
 
+from .models import Dataset
 
 
 class UploadCSVView(APIView):
-    permission_classes = [IsAuthenticated]
-
     def post(self, request):
         file = request.FILES.get("file")
 
         if not file:
             return Response({"error": "No file uploaded"}, status=400)
 
-        # Read CSV using pandas
         df = pd.read_csv(file)
 
-        # Basic analytics
         total_equipment = len(df)
         avg_flowrate = float(df["Flowrate"].mean())
         avg_pressure = float(df["Pressure"].mean())
         avg_temperature = float(df["Temperature"].mean())
         type_distribution = df["Type"].value_counts().to_dict()
 
-        # Save to database
         dataset = Dataset.objects.create(
             filename=file.name,
             total_equipment=total_equipment,
@@ -50,12 +43,8 @@ class UploadCSVView(APIView):
             "type_distribution": type_distribution
         })
 
-from rest_framework.permissions import IsAuthenticated
-
 
 class DatasetHistoryView(APIView):
-    permission_classes = [IsAuthenticated]
-
     def get(self, request):
         datasets = Dataset.objects.order_by("-uploaded_at")[:5]
 
@@ -74,9 +63,8 @@ class DatasetHistoryView(APIView):
 
         return Response(history)
 
-class DatasetPDFView(APIView):
-    permission_classes = [IsAuthenticated]
 
+class DatasetPDFView(APIView):
     def get(self, request, dataset_id):
         try:
             dataset = Dataset.objects.get(id=dataset_id)
