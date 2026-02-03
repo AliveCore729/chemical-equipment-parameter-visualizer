@@ -4,14 +4,11 @@ import axios from "axios";
 function History() {
   const [history, setHistory] = useState([]);
 
-  // --- SECURITY CONFIGURATION ---
-  // Load values from .env file
   const API_URL = process.env.REACT_APP_API_URL || "http://127.0.0.1:8000";
   const TOKEN = process.env.REACT_APP_API_TOKEN;
 
   useEffect(() => {
     const fetchHistory = async () => {
-      // Safety Check: Don't call API if token is missing
       if (!TOKEN) {
         console.warn("API Token is missing. Please check your .env file.");
         return;
@@ -19,10 +16,10 @@ function History() {
 
       try {
         const res = await axios.get(
-          `${API_URL}/api/history/`, // Use the variable
+          `${API_URL}/api/history/`,
           {
             headers: { 
-              Authorization: `Token ${TOKEN}` // Use the variable
+              Authorization: `Token ${TOKEN}`
             },
           }
         );
@@ -43,10 +40,10 @@ function History() {
 
     try {
       const res = await axios.get(
-        `${API_URL}/api/report/${datasetId}/`, // Use the variable
+        `${API_URL}/api/report/${datasetId}/`, 
         {
           headers: { 
-            Authorization: `Token ${TOKEN}` // Use the variable
+            Authorization: `Token ${TOKEN}` 
           },
           responseType: "blob",
         }

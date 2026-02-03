@@ -7,7 +7,6 @@ function Upload() {
   const [result, setResult] = useState(null);
   const [dragActive, setDragActive] = useState(false);
 
-  // --- DRAG & DROP HANDLERS ---
   const handleDrag = (e) => {
     e.preventDefault();
     e.stopPropagation();
@@ -38,16 +37,12 @@ function Upload() {
       setFile(e.target.files[0]);
     }
   };
-  // -----------------------------
-
-  // --- UPLOAD LOGIC ---
   const uploadCSV = async () => {
     if (!file) return alert("Select a CSV file");
 
     const formData = new FormData();
     formData.append("file", file);
 
-    // SECURE: Use Environment Variable
     const API_URL = process.env.REACT_APP_API_URL || "http://127.0.0.1:8000";
     const TOKEN = process.env.REACT_APP_API_TOKEN;
 
@@ -62,7 +57,7 @@ function Upload() {
         formData,
         {
           headers: {
-            Authorization: `Token ${TOKEN}`, // Use the variable
+            Authorization: `Token ${TOKEN}`, 
           },
         }
       );

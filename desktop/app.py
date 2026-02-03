@@ -18,7 +18,6 @@ from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
 import matplotlib.pyplot as plt
 
-# --- 1. LOAD CONFIGURATION ---
 load_dotenv()
 
 API_URL_BASE = os.getenv("API_URL", "http://127.0.0.1:8000")
@@ -27,7 +26,7 @@ API_HISTORY = f"{API_URL_BASE}/api/history/"
 API_REPORT = f"{API_URL_BASE}/api/report/"
 API_TOKEN = os.getenv("API_TOKEN")
 
-# --- 2. STYLESHEET ---
+
 STYLESHEET = """
 QMainWindow {
     background-color: #0f172a;
@@ -106,28 +105,24 @@ class EquipmentApp(QMainWindow):
             QMessageBox.critical(self, "Config Error", "API_TOKEN missing in .env file")
 
         self.initUI()
-        self.refresh_history() # Load history on startup
+        self.refresh_history()
 
     def initUI(self):
-        # Main Container (Horizontal Split)
         central_widget = QWidget()
         self.setCentralWidget(central_widget)
         main_layout = QHBoxLayout(central_widget)
         main_layout.setSpacing(20)
         main_layout.setContentsMargins(20, 20, 20, 20)
 
-        # ================= LEFT PANEL (DASHBOARD) =================
         left_panel = QWidget()
         left_layout = QVBoxLayout(left_panel)
         left_layout.setContentsMargins(0, 0, 0, 0)
         left_layout.setSpacing(15)
 
-        # 1. Header
         header = QLabel("Parameter Dashboard")
         header.setFont(QFont("Segoe UI", 22, QFont.Bold))
         left_layout.addWidget(header)
 
-        # 2. Upload Section
         upload_group = QGroupBox("New Analysis")
         upload_layout = QHBoxLayout()
         
@@ -145,14 +140,12 @@ class EquipmentApp(QMainWindow):
         upload_group.setLayout(upload_layout)
         left_layout.addWidget(upload_group)
 
-        # 3. Stats Grid (Hidden initially)
         self.stats_group = QGroupBox("Overview")
         self.stats_layout = QGridLayout()
         self.stats_group.setLayout(self.stats_layout)
         self.stats_group.setVisible(False) 
         left_layout.addWidget(self.stats_group)
 
-        # 4. Charts Area
         self.chart_group = QGroupBox("Visualization")
         chart_layout = QVBoxLayout()
         self.figure = Figure(figsize=(5, 4), dpi=100)
@@ -163,19 +156,16 @@ class EquipmentApp(QMainWindow):
         self.chart_group.setVisible(False)
         left_layout.addWidget(self.chart_group, stretch=1)
 
-        # ================= RIGHT PANEL (HISTORY) =================
         right_panel = QWidget()
-        right_panel.setFixedWidth(320) # Sidebar width
+        right_panel.setFixedWidth(320) 
         right_layout = QVBoxLayout(right_panel)
         right_layout.setContentsMargins(0, 0, 0, 0)
 
-        # History Header
         hist_label = QLabel("Recent Activity")
         hist_label.setFont(QFont("Segoe UI", 14, QFont.Bold))
         hist_label.setStyleSheet("color: #94a3b8; margin-bottom: 5px;")
         right_layout.addWidget(hist_label)
 
-        # Scroll Area for History Items
         self.hist_scroll = QScrollArea()
         self.hist_scroll.setWidgetResizable(True)
         self.hist_container = QWidget()
@@ -187,15 +177,12 @@ class EquipmentApp(QMainWindow):
         self.hist_scroll.setWidget(self.hist_container)
         right_layout.addWidget(self.hist_scroll)
 
-        # Add panels to main window
         main_layout.addWidget(left_panel, stretch=3)
         main_layout.addWidget(right_panel, stretch=1)
 
-    # --- LOGIC: FETCH & DISPLAY HISTORY ---
     def refresh_history(self):
         if not API_TOKEN: return
 
-        # Clear existing items
         for i in reversed(range(self.hist_layout.count())): 
             self.hist_layout.itemAt(i).widget().setParent(None)
 
@@ -217,30 +204,24 @@ class EquipmentApp(QMainWindow):
             print("History connection error:", e)
 
     def add_history_card(self, item):
-        """Creates a card widget for a single history item"""
         card = QFrame()
         card.setObjectName("HistoryCard")
         card_layout = QVBoxLayout(card)
         card_layout.setSpacing(4)
         
-        # Filename
         lbl_name = QLabel(item['filename'])
         lbl_name.setObjectName("HistTitle")
         lbl_name.setWordWrap(True)
         
-        # Date
         lbl_date = QLabel(item['uploaded_at'].split("T")[0])
         lbl_date.setObjectName("HistMeta")
         
-        # Metrics Row
         metrics = QLabel(f"Flow: {item['avg_flowrate']:.1f} | Press: {item['avg_pressure']:.1f}")
         metrics.setStyleSheet("color: #64748b; font-size: 11px;")
         
-        # Download Button
         btn_download = QPushButton("Download Report PDF")
         btn_download.setObjectName("DownloadBtn")
         btn_download.setCursor(Qt.PointingHandCursor)
-        # Use partial to pass the specific ID and Filename to the function
         btn_download.clicked.connect(partial(self.download_report, item['id'], item['filename']))
 
         card_layout.addWidget(lbl_name)
@@ -276,7 +257,6 @@ class EquipmentApp(QMainWindow):
         except Exception as e:
             QMessageBox.critical(self, "Error", f"Download failed: {str(e)}")
 
-    # --- LOGIC: UPLOAD & DISPLAY ---
     def create_stat_card(self, title, value, row, col):
         container = QFrame()
         layout = QVBoxLayout()
@@ -311,7 +291,7 @@ class EquipmentApp(QMainWindow):
             if response.status_code == 200:
                 data = response.json()
                 self.display_results(data)
-                self.refresh_history() # Refresh sidebar after upload
+                self.refresh_history() 
             else:
                 QMessageBox.critical(self, "Error", f"Upload failed: {response.text}")
 
@@ -319,7 +299,6 @@ class EquipmentApp(QMainWindow):
             QMessageBox.critical(self, "Connection Error", str(e))
 
     def display_results(self, data):
-        # Update Stats
         for i in reversed(range(self.stats_layout.count())): 
             self.stats_layout.itemAt(i).widget().setParent(None)
 
@@ -329,7 +308,6 @@ class EquipmentApp(QMainWindow):
         self.create_stat_card("Avg Temperature", f"{data['avg_temperature']:.2f}", 0, 3)
         self.stats_group.setVisible(True)
 
-        # Update Charts
         self.figure.clear()
         text_color = 'white'
         bar_colors = ['#10b981', '#f59e0b', '#ef4444'] 

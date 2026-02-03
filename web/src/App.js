@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import "./App.css"; // Ensure this matches the file name exactly
+import "./App.css"; 
 import Upload from "./Upload";
 import History from "./History";
 

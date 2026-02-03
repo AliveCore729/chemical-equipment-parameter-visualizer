@@ -7,13 +7,12 @@ ChartJS.register(ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarEle
 function Charts({ data }) {
   if (!data) return null;
 
-  // DARK MODE SETTINGS FOR CHARTS
   const darkOptions = {
     responsive: true,
     maintainAspectRatio: false,
     plugins: {
       legend: {
-        labels: { color: "rgba(255,255,255,0.7)" } // Legend text color
+        labels: { color: "rgba(255,255,255,0.7)" } 
       }
     },
     scales: {
@@ -34,7 +33,6 @@ function Charts({ data }) {
       plugins: { legend: { labels: { color: "rgba(255,255,255,0.7)" } } }
   };
 
-  // Chart Data with Bright Colors
   const pieData = {
     labels: Object.keys(data.type_distribution),
     datasets: [{
