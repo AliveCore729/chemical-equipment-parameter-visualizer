@@ -12,7 +12,14 @@ function Charts({ data }) {
     maintainAspectRatio: false,
     plugins: {
       legend: {
-        labels: { color: "rgba(255,255,255,0.7)" } 
+        labels: { color: "rgba(255,255,255,0.7)", font: { family: 'Inter' } } 
+      },
+      tooltip: {
+        backgroundColor: 'rgba(0,0,0,0.8)',
+        titleColor: '#fff',
+        bodyColor: '#fff',
+        borderColor: 'rgba(255,255,255,0.1)',
+        borderWidth: 1
       }
     },
     scales: {
@@ -30,14 +37,19 @@ function Charts({ data }) {
   const pieOptions = {
       responsive: true,
       maintainAspectRatio: false,
-      plugins: { legend: { labels: { color: "rgba(255,255,255,0.7)" } } }
+      plugins: { 
+        legend: { 
+          position: 'right',
+          labels: { color: "rgba(255,255,255,0.7)", padding: 20, font: { family: 'Inter' } } 
+        } 
+      }
   };
 
   const pieData = {
     labels: Object.keys(data.type_distribution),
     datasets: [{
       data: Object.values(data.type_distribution),
-      backgroundColor: ["#ff9f43", "#0abde3", "#ee5253", "#10ac84", "#5f27cd"],
+      backgroundColor: ["#f59e0b", "#10b981", "#3b82f6", "#ef4444", "#8b5cf6"],
       borderColor: "transparent"
     }]
   };
@@ -47,17 +59,17 @@ function Charts({ data }) {
     datasets: [{
       label: "Average Values",
       data: [data.avg_flowrate, data.avg_pressure, data.avg_temperature],
-      backgroundColor: ["#10ac84", "#ff9f43", "#ee5253"],
-      borderRadius: 5
+      backgroundColor: ["#10b981", "#f59e0b", "#ef4444"],
+      borderRadius: 6
     }]
   };
 
   return (
-    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "20px", height: "300px", marginTop: "30px" }}>
-      <div style={{ position: "relative" }}>
+    <div className="charts-grid">
+      <div className="chart-wrapper">
         <Pie data={pieData} options={pieOptions} />
       </div>
-      <div style={{ position: "relative" }}>
+      <div className="chart-wrapper">
         <Bar data={barData} options={darkOptions} />
       </div>
     </div>

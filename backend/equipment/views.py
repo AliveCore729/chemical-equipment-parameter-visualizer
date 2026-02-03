@@ -1,50 +1,65 @@
 import pandas as pd
+import io
 from rest_framework.views import APIView
+from rest_framework import generics
 from rest_framework.response import Response
+from rest_framework.permissions import IsAuthenticated, AllowAny
+from django.contrib.auth.models import User
 from django.http import FileResponse
 from reportlab.lib.pagesizes import A4
 from reportlab.pdfgen import canvas
-import io
 
 from .models import Dataset
+from .serializers import UserSerializer  
 
+class RegisterView(generics.CreateAPIView):
+    queryset = User.objects.all()
+    permission_classes = (AllowAny,) 
+    serializer_class = UserSerializer
 
 class UploadCSVView(APIView):
+    permission_classes = [IsAuthenticated] 
+
     def post(self, request):
         file = request.FILES.get("file")
 
         if not file:
             return Response({"error": "No file uploaded"}, status=400)
 
-        df = pd.read_csv(file)
+        try:
+            df = pd.read_csv(file)
 
-        total_equipment = len(df)
-        avg_flowrate = float(df["Flowrate"].mean())
-        avg_pressure = float(df["Pressure"].mean())
-        avg_temperature = float(df["Temperature"].mean())
-        type_distribution = df["Type"].value_counts().to_dict()
+            total_equipment = len(df)
+            avg_flowrate = float(df["Flowrate"].mean())
+            avg_pressure = float(df["Pressure"].mean())
+            avg_temperature = float(df["Temperature"].mean())
+            type_distribution = df["Type"].value_counts().to_dict()
 
-        dataset = Dataset.objects.create(
-            filename=file.name,
-            total_equipment=total_equipment,
-            avg_flowrate=avg_flowrate,
-            avg_pressure=avg_pressure,
-            avg_temperature=avg_temperature,
-            type_distribution=type_distribution
-        )
+            dataset = Dataset.objects.create(
+                filename=file.name,
+                total_equipment=total_equipment,
+                avg_flowrate=avg_flowrate,
+                avg_pressure=avg_pressure,
+                avg_temperature=avg_temperature,
+                type_distribution=type_distribution
+            )
 
-        return Response({
-            "message": "CSV uploaded successfully",
-            "dataset_id": dataset.id,
-            "total_equipment": total_equipment,
-            "avg_flowrate": avg_flowrate,
-            "avg_pressure": avg_pressure,
-            "avg_temperature": avg_temperature,
-            "type_distribution": type_distribution
-        })
+            return Response({
+                "message": "CSV uploaded successfully",
+                "dataset_id": dataset.id,
+                "total_equipment": total_equipment,
+                "avg_flowrate": avg_flowrate,
+                "avg_pressure": avg_pressure,
+                "avg_temperature": avg_temperature,
+                "type_distribution": type_distribution
+            })
+        except Exception as e:
+            return Response({"error": str(e)}, status=500)
 
 
 class DatasetHistoryView(APIView):
+    permission_classes = [IsAuthenticated] 
+
     def get(self, request):
         datasets = Dataset.objects.order_by("-uploaded_at")[:5]
 
@@ -65,6 +80,8 @@ class DatasetHistoryView(APIView):
 
 
 class DatasetPDFView(APIView):
+    permission_classes = [IsAuthenticated]
+
     def get(self, request, dataset_id):
         try:
             dataset = Dataset.objects.get(id=dataset_id)

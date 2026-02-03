@@ -124,12 +124,11 @@ AUTH_PASSWORD_VALIDATORS = [
 # backend/settings.py
 
 REST_FRAMEWORK = {
-    # Empty list means "Don't check for tokens"
-    "DEFAULT_AUTHENTICATION_CLASSES": [],
-    
-    # AllowAny means "Let anyone in" (Perfect for this demo)
+    "DEFAULT_AUTHENTICATION_CLASSES": [
+        "rest_framework.authentication.TokenAuthentication",
+    ],
     "DEFAULT_PERMISSION_CLASSES": [
-        "rest_framework.permissions.AllowAny",
+        "rest_framework.permissions.IsAuthenticated",
     ],
 }
 

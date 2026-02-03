@@ -37,6 +37,7 @@ function Upload() {
       setFile(e.target.files[0]);
     }
   };
+
   const uploadCSV = async () => {
     if (!file) return alert("Select a CSV file");
 
@@ -44,10 +45,11 @@ function Upload() {
     formData.append("file", file);
 
     const API_URL = process.env.REACT_APP_API_URL || "http://127.0.0.1:8000";
-    const TOKEN = process.env.REACT_APP_API_TOKEN;
+    const TOKEN = localStorage.getItem("token"); 
 
     if (!TOKEN) {
-      alert("System Error: API Token is missing. Please check .env file.");
+      alert("You are not logged in. Please log in again.");
+      window.location.href = "/";
       return;
     }
 
@@ -57,15 +59,22 @@ function Upload() {
         formData,
         {
           headers: {
-            Authorization: `Token ${TOKEN}`, 
+            Authorization: `Token ${TOKEN}`,
           },
         }
       );
       setResult(res.data);
     } catch (error) {
       console.error("Upload failed", error);
-      const errMsg = error.response?.data?.error || "Error uploading file.";
-      alert(errMsg);
+      const errMsg = error.response?.data?.error || "Error uploading file. Check your connection.";
+      
+      if (error.response?.status === 401) {
+        alert("Session expired. Please log in again.");
+        localStorage.clear();
+        window.location.href = "/";
+      } else {
+        alert(errMsg);
+      }
     }
   };
 
@@ -125,6 +134,7 @@ function Upload() {
         </form>
       </div>
 
+      {/* Results Section */}
       {result && (
         <div className="glass-panel">
           <h2 className="section-title">Overview</h2>

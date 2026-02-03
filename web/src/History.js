@@ -5,13 +5,12 @@ function History() {
   const [history, setHistory] = useState([]);
 
   const API_URL = process.env.REACT_APP_API_URL || "http://127.0.0.1:8000";
-  const TOKEN = process.env.REACT_APP_API_TOKEN;
+  const TOKEN = localStorage.getItem("token");
 
   useEffect(() => {
     const fetchHistory = async () => {
       if (!TOKEN) {
-        console.warn("API Token is missing. Please check your .env file.");
-        return;
+        return; 
       }
 
       try {
@@ -19,13 +18,17 @@ function History() {
           `${API_URL}/api/history/`,
           {
             headers: { 
-              Authorization: `Token ${TOKEN}`
+              Authorization: `Token ${TOKEN}` 
             },
           }
         );
         setHistory(res.data);
       } catch (err) {
         console.error("Error fetching history", err);
+        if (err.response && err.response.status === 401) {
+            localStorage.clear();
+            window.location.href = "/";
+        }
       }
     };
 
@@ -34,7 +37,7 @@ function History() {
 
   const downloadPDF = async (datasetId, filename) => {
     if (!TOKEN) {
-      alert("Authentication Error: Token missing.");
+      alert("You must be logged in to download reports.");
       return;
     }
 
@@ -58,7 +61,7 @@ function History() {
       link.remove();
     } catch (err) {
       console.error("PDF download failed", err);
-      alert("Failed to download PDF");
+      alert("Failed to download PDF. Your session may have expired.");
     }
   };
 

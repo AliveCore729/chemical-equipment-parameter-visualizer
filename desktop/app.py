@@ -7,105 +7,247 @@ from functools import partial
 from PyQt5.QtWidgets import (
     QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
     QPushButton, QLabel, QFileDialog, QFrame, QGridLayout, QGroupBox, 
-    QMessageBox, QScrollArea, QSizePolicy
+    QMessageBox, QScrollArea, QLineEdit
 )
-from PyQt5.QtCore import Qt
+from PyQt5.QtCore import Qt, pyqtSignal
 from PyQt5.QtGui import QFont
 
 import matplotlib
 matplotlib.use('Qt5Agg')
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
-import matplotlib.pyplot as plt
 
 load_dotenv()
-
 API_URL_BASE = os.getenv("API_URL", "http://127.0.0.1:8000")
+
+API_LOGIN = f"{API_URL_BASE}/api/login/"
+API_REGISTER = f"{API_URL_BASE}/api/register/"
 API_UPLOAD = f"{API_URL_BASE}/api/upload/"
 API_HISTORY = f"{API_URL_BASE}/api/history/"
 API_REPORT = f"{API_URL_BASE}/api/report/"
-API_TOKEN = os.getenv("API_TOKEN")
-
 
 STYLESHEET = """
-QMainWindow {
-    background-color: #0f172a;
+QMainWindow, QWidget#LoginWindow { 
+    background-color: #0f172a; 
 }
-QLabel {
-    color: #ffffff;
-    font-family: 'Segoe UI', sans-serif;
+QLabel { 
+    color: #ffffff; 
+    font-family: 'Segoe UI', sans-serif; 
 }
-/* Panels & GroupBoxes */
-QGroupBox {
-    border: 1px solid #334155;
-    border-radius: 12px;
-    margin-top: 10px;
-    background-color: #1e293b;
-    font-weight: bold;
-    color: #94a3b8;
-}
-QGroupBox::title {
-    subcontrol-origin: margin;
-    left: 10px;
-    padding: 0 5px;
-}
+
+/* FIX: Make the Scroll Area Transparent so it isn't white */
 QScrollArea {
+    background-color: transparent;
     border: none;
+}
+QScrollArea > QWidget > QWidget {
     background-color: transparent;
 }
+
+/* Inputs */
+QLineEdit {
+    padding: 12px;
+    border-radius: 8px;
+    border: 1px solid #334155;
+    background-color: #1e293b;
+    color: white;
+    font-size: 14px;
+    selection-background-color: #f59e0b;
+}
+QLineEdit:focus { 
+    border: 1px solid #f59e0b; 
+}
+
+/* Panels */
+QGroupBox {
+    border: 1px solid #334155; 
+    border-radius: 12px; 
+    margin-top: 10px;
+    background-color: #1e293b; 
+    font-weight: bold; 
+    color: #94a3b8;
+}
+QGroupBox::title { 
+    subcontrol-origin: margin; 
+    left: 10px; 
+    padding: 0 5px; 
+}
+
+/* Login Container Frame */
+QFrame#LoginFrame {
+    background-color: #1e293b;
+    border: 1px solid #334155;
+    border-radius: 16px;
+}
+
 /* Buttons */
 QPushButton {
-    background-color: #f59e0b; /* Orange Main Button */
-    color: white;
+    background-color: #f59e0b; 
+    color: white; 
     border: none;
-    padding: 10px;
-    border-radius: 6px;
+    padding: 10px; 
+    border-radius: 6px; 
     font-weight: bold;
+    font-size: 13px;
 }
-QPushButton:hover {
-    background-color: #d97706;
+QPushButton:hover { 
+    background-color: #d97706; 
 }
-QPushButton#DownloadBtn {
-    background-color: rgba(255, 255, 255, 0.1);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+
+QPushButton#SecondaryBtn {
+    background-color: transparent; 
+    border: 1px solid #475569; 
     color: #cbd5e1;
-    font-size: 11px;
-    padding: 6px;
+}
+QPushButton#SecondaryBtn:hover { 
+    background-color: rgba(255,255,255,0.05); 
+    color: white; 
+    border-color: #94a3b8;
+}
+
+QPushButton#DownloadBtn {
+    background-color: rgba(255, 255, 255, 0.1); 
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: #cbd5e1; 
+    font-size: 11px; 
+    padding: 6px; 
     margin-top: 5px;
 }
-QPushButton#DownloadBtn:hover {
-    background-color: rgba(255, 255, 255, 0.2);
-    color: white;
+QPushButton#DownloadBtn:hover { 
+    background-color: rgba(255, 255, 255, 0.2); 
+    color: white; 
 }
+
 /* History Items */
 QFrame#HistoryCard {
-    background-color: rgba(0, 0, 0, 0.2);
+    background-color: rgba(0, 0, 0, 0.2); 
     border-radius: 8px;
     border-left: 3px solid rgba(255, 255, 255, 0.1);
 }
 QFrame#HistoryCard:hover {
-    background-color: rgba(255, 255, 255, 0.05);
+    background-color: rgba(255, 255, 255, 0.05); 
     border-left: 3px solid #f59e0b;
 }
-/* Stats Text */
+
+/* Stats */
 QLabel#StatValue { font-size: 20px; font-weight: bold; color: #38bdf8; }
 QLabel#StatLabel { color: #94a3b8; font-size: 11px; text-transform: uppercase; }
 QLabel#HistTitle { font-weight: bold; font-size: 13px; color: #e2e8f0; }
 QLabel#HistMeta { font-size: 11px; color: #64748b; }
 """
 
-class EquipmentApp(QMainWindow):
+class LoginWindow(QWidget):
+    loginSuccess = pyqtSignal(str) 
+
     def __init__(self):
         super().__init__()
+        self.setObjectName("LoginWindow")
+        self.setWindowTitle("Login - Chemical Visualizer")
+        self.setGeometry(100, 100, 400, 550)
+        self.initUI()
+
+    def initUI(self):
+        layout = QVBoxLayout()
+        layout.setAlignment(Qt.AlignCenter)
+        layout.setSpacing(30)
+        layout.setContentsMargins(40, 40, 40, 40)
+
+        title_label = QLabel("Welcome Back")
+        title_label.setFont(QFont("Segoe UI", 24, QFont.Bold))
+        title_label.setAlignment(Qt.AlignCenter)
+        
+        subtitle = QLabel("Sign in to continue")
+        subtitle.setStyleSheet("color: #94a3b8; font-size: 14px;")
+        subtitle.setAlignment(Qt.AlignCenter)
+
+        form_frame = QFrame()
+        form_frame.setObjectName("LoginFrame")
+        form_layout = QVBoxLayout(form_frame)
+        form_layout.setSpacing(15)
+        form_layout.setContentsMargins(25, 30, 25, 30)
+
+        self.user_input = QLineEdit()
+        self.user_input.setPlaceholderText("Username")
+        
+        self.pass_input = QLineEdit()
+        self.pass_input.setPlaceholderText("Password")
+        self.pass_input.setEchoMode(QLineEdit.Password)
+
+        self.btn_login = QPushButton("Login")
+        self.btn_login.setCursor(Qt.PointingHandCursor)
+        self.btn_login.setFixedHeight(40)
+        self.btn_login.clicked.connect(self.handle_login)
+
+        self.btn_signup = QPushButton("Create Account")
+        self.btn_signup.setObjectName("SecondaryBtn")
+        self.btn_signup.setCursor(Qt.PointingHandCursor)
+        self.btn_signup.setFixedHeight(40)
+        self.btn_signup.clicked.connect(self.handle_signup)
+
+        form_layout.addWidget(QLabel("Username"))
+        form_layout.addWidget(self.user_input)
+        form_layout.addWidget(QLabel("Password"))
+        form_layout.addWidget(self.pass_input)
+        form_layout.addSpacing(10)
+        form_layout.addWidget(self.btn_login)
+        form_layout.addWidget(self.btn_signup)
+
+        layout.addStretch()
+        layout.addWidget(title_label)
+        layout.addWidget(subtitle)
+        layout.addWidget(form_frame)
+        layout.addStretch()
+        
+        self.setLayout(layout)
+
+    def handle_login(self):
+        username = self.user_input.text()
+        password = self.pass_input.text()
+
+        if not username or not password:
+            QMessageBox.warning(self, "Error", "Please enter username and password")
+            return
+
+        try:
+            response = requests.post(API_LOGIN, json={'username': username, 'password': password})
+            
+            if response.status_code == 200:
+                token = response.json().get('token')
+                self.loginSuccess.emit(token)
+            else:
+                QMessageBox.warning(self, "Login Failed", "Invalid credentials")
+        except Exception as e:
+            QMessageBox.critical(self, "Connection Error", f"Could not connect to server.\n{e}")
+
+    def handle_signup(self):
+        username = self.user_input.text()
+        password = self.pass_input.text()
+
+        if not username or not password:
+            QMessageBox.warning(self, "Error", "Please enter a username and password to register")
+            return
+
+        try:
+            response = requests.post(API_REGISTER, json={'username': username, 'password': password})
+            if response.status_code == 201:
+                QMessageBox.information(self, "Success", "Account created successfully!\nPlease click Login.")
+            else:
+                QMessageBox.warning(self, "Error", "Username likely taken.")
+        except Exception as e:
+            QMessageBox.critical(self, "Error", str(e))
+
+class EquipmentApp(QMainWindow):
+    def __init__(self, token):
+        super().__init__()
+        self.token = token
         self.setWindowTitle("Chemical Equipment Visualizer")
         self.setGeometry(100, 100, 1200, 800)
-        self.setStyleSheet(STYLESHEET)
         
-        if not API_TOKEN:
-            QMessageBox.critical(self, "Config Error", "API_TOKEN missing in .env file")
-
         self.initUI()
         self.refresh_history()
+
+    def get_headers(self):
+        return {"Authorization": f"Token {self.token}"}
 
     def initUI(self):
         central_widget = QWidget()
@@ -119,9 +261,19 @@ class EquipmentApp(QMainWindow):
         left_layout.setContentsMargins(0, 0, 0, 0)
         left_layout.setSpacing(15)
 
+        header_layout = QHBoxLayout()
         header = QLabel("Parameter Dashboard")
         header.setFont(QFont("Segoe UI", 22, QFont.Bold))
-        left_layout.addWidget(header)
+        
+        btn_logout = QPushButton("Logout")
+        btn_logout.setObjectName("SecondaryBtn")
+        btn_logout.setFixedWidth(80)
+        btn_logout.clicked.connect(self.close)
+
+        header_layout.addWidget(header)
+        header_layout.addStretch()
+        header_layout.addWidget(btn_logout)
+        left_layout.addLayout(header_layout)
 
         upload_group = QGroupBox("New Analysis")
         upload_layout = QHBoxLayout()
@@ -136,7 +288,6 @@ class EquipmentApp(QMainWindow):
 
         upload_layout.addWidget(self.upload_btn)
         upload_layout.addWidget(self.file_label)
-        
         upload_group.setLayout(upload_layout)
         left_layout.addWidget(upload_group)
 
@@ -168,8 +319,11 @@ class EquipmentApp(QMainWindow):
 
         self.hist_scroll = QScrollArea()
         self.hist_scroll.setWidgetResizable(True)
+
         self.hist_container = QWidget()
-        self.hist_container.setStyleSheet("background-color: transparent;")
+        self.hist_container.setAttribute(Qt.WA_StyledBackground, True)
+        self.hist_container.setStyleSheet("background-color: transparent;") 
+        
         self.hist_layout = QVBoxLayout(self.hist_container)
         self.hist_layout.setAlignment(Qt.AlignTop)
         self.hist_layout.setSpacing(10)
@@ -181,16 +335,12 @@ class EquipmentApp(QMainWindow):
         main_layout.addWidget(right_panel, stretch=1)
 
     def refresh_history(self):
-        if not API_TOKEN: return
-
         for i in reversed(range(self.hist_layout.count())): 
             self.hist_layout.itemAt(i).widget().setParent(None)
 
         try:
-            response = requests.get(
-                API_HISTORY,
-                headers={"Authorization": f"Token {API_TOKEN}"}
-            )
+            response = requests.get(API_HISTORY, headers=self.get_headers())
+            
             if response.status_code == 200:
                 history_data = response.json()
                 if not history_data:
@@ -198,8 +348,8 @@ class EquipmentApp(QMainWindow):
                 else:
                     for item in history_data:
                         self.add_history_card(item)
-            else:
-                print("Failed to fetch history:", response.text)
+            elif response.status_code == 401:
+                QMessageBox.warning(self, "Session Expired", "Please restart to login again.")
         except Exception as e:
             print("History connection error:", e)
 
@@ -228,24 +378,20 @@ class EquipmentApp(QMainWindow):
         card_layout.addWidget(lbl_date)
         card_layout.addWidget(metrics)
         card_layout.addWidget(btn_download)
-        
         self.hist_layout.addWidget(card)
 
     def download_report(self, report_id, filename):
-        """Downloads the PDF report"""
         save_path, _ = QFileDialog.getSaveFileName(
             self, "Save Report", f"{filename}_report.pdf", "PDF Files (*.pdf)"
         )
-        
         if not save_path: return
 
         try:
             response = requests.get(
                 f"{API_REPORT}{report_id}/",
-                headers={"Authorization": f"Token {API_TOKEN}"},
+                headers=self.get_headers(),
                 stream=True
             )
-            
             if response.status_code == 200:
                 with open(save_path, 'wb') as f:
                     for chunk in response.iter_content(chunk_size=8192):
@@ -253,7 +399,6 @@ class EquipmentApp(QMainWindow):
                 QMessageBox.information(self, "Success", "Report downloaded successfully!")
             else:
                 QMessageBox.warning(self, "Error", "Failed to download report.")
-                
         except Exception as e:
             QMessageBox.critical(self, "Error", f"Download failed: {str(e)}")
 
@@ -261,20 +406,16 @@ class EquipmentApp(QMainWindow):
         container = QFrame()
         layout = QVBoxLayout()
         layout.setContentsMargins(0,0,0,0)
-        
         lbl_title = QLabel(title)
         lbl_title.setObjectName("StatLabel")
         lbl_value = QLabel(str(value))
         lbl_value.setObjectName("StatValue")
-        
         layout.addWidget(lbl_title)
         layout.addWidget(lbl_value)
         container.setLayout(layout)
         self.stats_layout.addWidget(container, row, col)
 
     def upload_csv(self):
-        if not API_TOKEN: return
-
         file_path, _ = QFileDialog.getOpenFileName(self, "Select CSV", "", "CSV Files (*.csv)")
         if not file_path: return
 
@@ -284,7 +425,7 @@ class EquipmentApp(QMainWindow):
             with open(file_path, "rb") as f:
                 response = requests.post(
                     API_UPLOAD,
-                    headers={"Authorization": f"Token {API_TOKEN}"},
+                    headers=self.get_headers(),
                     files={"file": f}
                 )
 
@@ -294,7 +435,6 @@ class EquipmentApp(QMainWindow):
                 self.refresh_history() 
             else:
                 QMessageBox.critical(self, "Error", f"Upload failed: {response.text}")
-
         except Exception as e:
             QMessageBox.critical(self, "Connection Error", str(e))
 
@@ -339,8 +479,22 @@ class EquipmentApp(QMainWindow):
         self.canvas.draw()
         self.chart_group.setVisible(True)
 
+class MainController:
+    def __init__(self):
+        self.app = QApplication(sys.argv)
+        self.app.setStyleSheet(STYLESHEET)
+        
+        self.login_window = LoginWindow()
+        self.login_window.loginSuccess.connect(self.switch_to_main)
+        self.login_window.show()
+        
+        self.main_window = None
+        sys.exit(self.app.exec_())
+
+    def switch_to_main(self, token):
+        self.login_window.close()
+        self.main_window = EquipmentApp(token)
+        self.main_window.show()
+
 if __name__ == "__main__":
-    app = QApplication(sys.argv)
-    window = EquipmentApp()
-    window.show()
-    sys.exit(app.exec_())
+    MainController()

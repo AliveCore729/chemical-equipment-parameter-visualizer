@@ -26,7 +26,7 @@ html, body, #root {
   padding-bottom: 20px;
   display: flex;
   justify-content: space-between;
-  align-items: end;
+  align-items: flex-end;
 }
 
 .dashboard-header h1 {
@@ -36,6 +36,24 @@ html, body, #root {
   background: linear-gradient(90deg, #fff, #94a3b8);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
+}
+
+.btn-logout {
+  background-color: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #cbd5e1;
+  padding: 8px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.2s;
+  height: fit-content;
+}
+
+.btn-logout:hover {
+  background-color: rgba(239, 68, 68, 0.2); 
+  color: #f87171;
+  border-color: #f87171;
 }
 
 .main-grid {
@@ -74,9 +92,24 @@ html, body, #root {
   margin-bottom: 25px;
 }
 
-.hidden-input {
-  display: none;
+.input-field {
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  padding: 12px;
+  border-radius: 8px;
+  color: white;
+  font-size: 1rem;
+  outline: none;
+  width: 100%;
+  box-sizing: border-box;
 }
+
+.input-field:focus {
+  border-color: #f59e0b;
+  background: rgba(0, 0, 0, 0.5);
+}
+
+.hidden-input { display: none; }
 
 .drag-drop-zone {
   border: 2px dashed rgba(255, 255, 255, 0.15);
@@ -110,19 +143,10 @@ html, body, #root {
   transition: filter 0.3s;
 }
 
-.drag-drop-zone:hover .upload-icon {
-  filter: grayscale(0%);
-}
+.drag-drop-zone:hover .upload-icon { filter: grayscale(0%); }
 
-.upload-text {
-  font-size: 1.1rem;
-  color: #cbd5e1;
-}
-
-.upload-text strong {
-  color: #f59e0b; 
-  text-decoration: underline;
-}
+.upload-text { font-size: 1.1rem; color: #cbd5e1; }
+.upload-text strong { color: #f59e0b; text-decoration: underline; }
 
 .file-name-display {
   background: rgba(16, 185, 129, 0.1);
@@ -135,7 +159,6 @@ html, body, #root {
   margin-bottom: 20px;
 }
 
-
 .btn-gradient {
   background: linear-gradient(135deg, #f59e0b 0%, #ea580c 100%);
   border: none;
@@ -147,6 +170,7 @@ html, body, #root {
   cursor: pointer;
   box-shadow: 0 4px 15px rgba(234, 88, 12, 0.3);
   transition: transform 0.2s, box-shadow 0.2s;
+  width: 100%; 
 }
 
 .btn-gradient:hover {
