@@ -102,7 +102,7 @@ ChemicalProject/
 ├── web/                      # React Frontend
 │   ├── src/
 │   │   ├── App.js            # Router & Layout Logic
-│   │   ├── Login.js          # Login Screen
+│   │   ├── SignIn.js          # Login Screen
 │   │   ├── Signup.js         # Registration Screen
 │   │   ├── Upload.js         # Upload & Charts Component
 │   │   ├── History.js        # History & PDF Download
