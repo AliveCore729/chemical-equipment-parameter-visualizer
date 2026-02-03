@@ -88,21 +88,33 @@ Chemical plants often maintain equipment data in CSV format. Manually analyzing 
 
 ## 📁 Project Structure
 
+```text
 ChemicalProject/
-├── backend/
-│   ├── backend/
-│   ├── equipment/
-│   └── manage.py
+├── backend/                  # Django Project Root
+│   ├── backend/              # Project Settings (settings.py, urls.py)
+│   ├── equipment/            # Core App
+│   │   ├── models.py         # Database Models
+│   │   ├── views.py          # API Logic (Auth, Upload, History)
+│   │   ├── serializers.py    # JSON Serializers (User & Data)
+│   │   └── urls.py           # App routing
+│   └── manage.py             # Django Entry Point
 │
-├── web/
-│   └── src/
+├── web/                      # React Frontend
+│   ├── src/
+│   │   ├── App.js            # Router & Layout Logic
+│   │   ├── Login.js          # Login Screen
+│   │   ├── Signup.js         # Registration Screen
+│   │   ├── Upload.js         # Upload & Charts Component
+│   │   ├── History.js        # History & PDF Download
+│   │   └── App.css           # Global Dark Theme Styles
+│   └── package.json          # Dependencies
 │
-├── desktop/
-│   ├── app.py
-│   └── .env
+├── desktop/                  # Desktop Client
+│   ├── app.py                # Main Entry (Login Window -> Dashboard)
+│   └── .env                  # Environment Variables (API URL)
 │
-├── venv/
-└── README.md
+├── venv/                     # Virtual Environment
+└── README.md                 # Project Documentation
 
 ---
 
