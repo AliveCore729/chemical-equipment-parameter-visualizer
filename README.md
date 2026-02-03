@@ -1,7 +1,7 @@
 # Chemical Equipment Parameter Visualizer ⚗️
-### Hybrid Web + Desktop Application
+### Hybrid Web + Desktop Application with Secure Authentication
 
-![Project Status](https://img.shields.io/badge/status-active-success.svg)
+![Status](https://img.shields.io/badge/status-active-success.svg)
 ![Python](https://img.shields.io/badge/python-3.8+-blue.svg)
 ![Django](https://img.shields.io/badge/django-4.0+-green.svg)
 ![React](https://img.shields.io/badge/react-18+-blue.svg)
@@ -9,15 +9,11 @@
 
 ---
 
-## 📌 Project Overview
+## 📌 Overview
 
-The **Chemical Equipment Parameter Visualizer** is a hybrid application designed to analyze and visualize operational parameters of chemical equipment. The system allows users to upload CSV datasets, automatically compute analytics, visualize results using charts, maintain upload history, and generate downloadable PDF reports.
+The **Chemical Equipment Parameter Visualizer** is a hybrid application that helps analyze and visualize operational data of chemical equipment. Users can securely log in, upload CSV files, view analytics through charts, track upload history, and generate PDF reports.
 
-A **single Django REST backend** powers both:
-1.  A **React-based Web Application**
-2.  A **PyQt5-based Desktop Application**
-
-This ensures consistency, scalability, and a real-world architectural approach.
+A **single Django REST backend** serves both a **React-based Web Application** and a **PyQt5-based Desktop Application**, ensuring consistent data access and authentication.
 
 ---
 
@@ -36,85 +32,77 @@ Chemical plants often maintain equipment data in CSV format. Manually analyzing 
 
 ## ⚙️ Tech Stack
 
-### 🔙 Backend
-* **Framework:** Django, Django REST Framework (DRF)
-* **Data Processing:** Pandas
-* **Database:** SQLite
-* **Reporting:** ReportLab (PDF Generation)
+### 🔙 Backend- Django
+- Django REST Framework
+- Token-Based Authentication
+- Pandas
+- SQLite
+- ReportLab (PDF Generation)
 
 ### 🌐 Web Frontend
-* **Framework:** React.js
-* **Visualization:** Chart.js
-* **HTTP Client:** Axios
+- React.js
+- React Router DOM
+- Chart.js
+- Axios
+- Modern Dark UI
 
 ### 🖥️ Desktop Frontend
-* **GUI Framework:** PyQt5
-* **Visualization:** Matplotlib
-* **HTTP Client:** Requests
-
-### 🔐 Authentication
-* **Method:** Token-based Authentication (DRF)
+- PyQt5
+- Matplotlib
+- Requests
+- Threaded API Calls
 
 ---
 
 ## ✨ Features
 
-### Core Features
-- [x] CSV file upload & validation
-- [x] Automatic data parsing using Pandas
-- [x] **Summary Analytics:**
-    - Total equipment count
-    - Average flowrate
-    - Average pressure
-    - Average temperature
-- [x] Equipment type distribution analysis
-- [x] Secure REST APIs with Token-based authentication
+### 🔐 Authentication
+- User Signup & Login
+- Secure token-based sessions
+- Protected routes and dashboards
+- Logout support
+
+### 📊 Core Features
+- CSV upload and validation
+- Automatic data analysis
+- Summary analytics:
+  - Equipment count
+  - Average flowrate
+  - Average pressure
+  - Average temperature
+- Equipment type distribution
 
 ### 🌐 Web Application
-- Interactive dashboard
-- Pie chart for equipment distribution & Bar chart for average parameters
-- Upload history (Retains last 5 datasets)
-- Secure PDF report download
+- Interactive charts
+- Upload history
+- PDF report downloads
+- Responsive dark UI
 
 ### 🖥️ Desktop Application
-- Native desktop window for CSV upload
-- Summary analytics display
-- Embedded Matplotlib charts (Pie and Bar)
-- Consumes the exact same backend APIs as the web app
-
-### 📄 Reporting
-- Server-side PDF generation via ReportLab
-- **Includes:** Dataset metadata, upload timestamp, summary analytics, and equipment distribution.
+- Dedicated login window
+- Native PyQt5 interface
+- Embedded Matplotlib charts
+- Fully synchronized data
 
 ---
 
 ## 📁 Project Structure
 
-```text
 ChemicalProject/
-├── backend/                  # Django Project Root
-│   ├── backend/              # Project Settings (settings.py, urls.py)
-│   ├── equipment/            # Core App
-│   │   ├── models.py         # Database Models
-│   │   ├── views.py          # API Logic
-│   │   ├── urls.py           # App routing
-│   │   └── migrations/       # DB Migrations
-│   ├── db.sqlite3            # SQLite Database
-│   └── manage.py             # Django Entry Point
+├── backend/
+│   ├── backend/
+│   ├── equipment/
+│   └── manage.py
 │
-├── web/                      # React Frontend
-│   ├── src/
-│   │   ├── App.js            # Main Component
-│   │   ├── History.js        # History Component
-│   │   └── index.js          # Entry Point
-│   └── package.json          # Dependencies
+├── web/
+│   └── src/
 │
-├── desktop/                  # Desktop Client
-│   └── app.py                # PyQt5 Application Entry
+├── desktop/
+│   ├── app.py
+│   └── .env
 │
-├── venv/                     # Virtual Environment
-└── README.md                 # Project Documentation
-```
+├── venv/
+└── README.md
 
 ---
 
@@ -152,27 +140,18 @@ python app.py
 
 ---
 
-## 📊 Sample Data
+## 📊 Sample CSV Format
 
-Use the provided `sample_equipment_data.csv` file for testing. The system expects the following columns:
-
-| Equipment Name | Type | Flowrate | Pressure | Temperature |
-| :--- | :--- | :--- | :--- | :--- |
-| Tank-01 | Reactor | 500 | 12.5 | 85 |
-
----
-
-## 🔐 Authentication & Reporting
-
-* **Security:** Token-based authentication is enforced for CSV uploads, history retrieval, and PDF downloads.
-* **PDF Reports:** Reports are generated on the backend using **ReportLab** and downloaded via authenticated API calls. They include dataset metadata and statistical summaries.
+Equipment Name | Type | Flowrate | Pressure | Temperature  
+Tank-01 | Reactor | 500 | 12.5 | 85  
+Pump-A | Pump | 1200 | 45.0 | 40  
 
 ---
 
 ## 👤 Author
 
-**Shreyansh Jain**
-*Undergraduate | Software & Web Development*
+**Shreyansh Jain**  
+Undergraduate | Software & Web Development
 
 Focus: Data Structures, Backend Systems, Full-Stack Development.
 
@@ -180,4 +159,4 @@ Focus: Data Structures, Backend Systems, Full-Stack Development.
 
 ## 🏁 Conclusion
 
-This project demonstrates a complete **end-to-end hybrid system** using industry-relevant technologies. It follows clean architecture principles and is suitable for real-world data visualization and reporting use cases.
+This project demonstrates a real-world **hybrid architecture** where a single secure backend efficiently serves both web and desktop applications.
